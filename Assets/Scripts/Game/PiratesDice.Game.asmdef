@@ -1,7 +1,17 @@
 {
     "name": "PiratesDice.Game",
     "rootNamespace": "PiratesDice.Game",
-    "references": ["PiratesDice.Core", "PiratesDice.AI", "UnityEngine.UI", "Unity.InputSystem"],
+    "references": [
+        "PiratesDice.Core",
+        "PiratesDice.AI",
+        "PiratesDice.Online",
+        "UnityEngine.UI",
+        "Unity.InputSystem",
+        "Unity.Netcode.Runtime",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.Multiplayer"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

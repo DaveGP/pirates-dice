@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace PiratesDice.Game.UI
 {
-    /// <summary>Pirate palette for the placeholder UI.</summary>
+    /// <summary>Pirate palette.</summary>
     public static class Palette
     {
         public static readonly Color Sea = new Color(0.05f, 0.11f, 0.16f);
@@ -164,6 +164,28 @@ namespace PiratesDice.Game.UI
             if (flexWidth >= 0) le.flexibleWidth = flexWidth;
             if (flexHeight >= 0) le.flexibleHeight = flexHeight;
             return le;
+        }
+
+        /// <summary>A one-line text box. On phones, tapping it opens the on-screen keyboard.</summary>
+        public static InputField Input(string name, Transform parent, string placeholder, string value, int characterLimit, int fontSize = 44)
+        {
+            Image bg = Panel(name, parent, Palette.Bone);
+            var input = bg.gameObject.AddComponent<InputField>();
+            input.targetGraphic = bg;
+
+            Text text = Label("Text", bg.transform, "", fontSize, Palette.Ink, TextAnchor.MiddleLeft);
+            Stretch(text.rectTransform, 22);
+            text.supportRichText = false;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            Text hint = Label("Placeholder", bg.transform, placeholder, fontSize, new Color(Palette.Ink.r, Palette.Ink.g, Palette.Ink.b, 0.45f), TextAnchor.MiddleLeft, FontStyle.Italic);
+            Stretch(hint.rectTransform, 22);
+
+            input.textComponent = text;
+            input.placeholder = hint;
+            input.characterLimit = characterLimit;
+            input.lineType = InputField.LineType.SingleLine;
+            input.text = value ?? "";
+            return input;
         }
 
         /// <summary>An image from one of the <see cref="Art"/> sprites, sliced when the sprite has borders.</summary>

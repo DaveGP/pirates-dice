@@ -106,7 +106,7 @@ namespace PiratesDice.Game.UI
             UiKit.Size(_round, flexWidth: 1, height: 90);
             _soundButton = UiKit.Button("Sound", header, "", Palette.Wood, ToggleSound, 32);
             UiKit.Size(_soundButton, 200, 84);
-            UiKit.Size(UiKit.Button("Menu", header, "Menu", Palette.Wood, () => _onMenu(), 36), 180, 84);
+            UiKit.Size(UiKit.Button("Menu", header, _table.IsOnline ? "Leave" : "Menu", Palette.Wood, () => _onMenu(), 36), 180, 84);
             RefreshSoundButton();
         }
 
@@ -268,7 +268,7 @@ namespace PiratesDice.Game.UI
             _overlayButtons = buttons.gameObject.AddComponent<CanvasGroup>();
             _overlayPrimary = UiKit.Button("Primary", buttons, "", Palette.Blood, null, 48);
             UiKit.Size(_overlayPrimary, 460, 140);
-            _overlaySecondary = UiKit.Button("Secondary", buttons, "Menu", Palette.Wood, () => _onMenu(), 48);
+            _overlaySecondary = UiKit.Button("Secondary", buttons, _table.IsOnline ? "Leave" : "Menu", Palette.Wood, () => _onMenu(), 48);
             UiKit.Size(_overlaySecondary, 300, 140);
 
             _overlay.SetActive(false);
@@ -279,6 +279,13 @@ namespace PiratesDice.Game.UI
         void OnRoundStarted()
         {
             if (_table.Engine == null) return;
+            // Online the host deals by itself, so a new round clears the last reveal.
+            if (_table.IsOnline && _overlay.activeSelf)
+            {
+                Tween.Stop(_revealRoutine);
+                _revealRoutine = null;
+                _overlay.SetActive(false);
+            }
             Tween.Stop(_rollRoutine);
             _rollRoutine = Tween.Run(RollMyDice());
             foreach (SeatCard card in _cards) card.ShakeCup();
@@ -641,7 +648,16 @@ namespace PiratesDice.Game.UI
             }
 
             _overlayPrimary.onClick.RemoveAllListeners();
-            if (gameOver || tutorialDone)
+            _overlayPrimary.interactable = true;
+            if (_table.IsOnline)
+            {
+                // The host deals the next round itself, and only the host can start a new game.
+                bool canRestart = gameOver && !_table.IsMirror;
+                UiKit.SetButtonText(_overlayPrimary, canRestart ? "Sail again" : gameOver ? "Waiting for the captain" : "Next round soon...");
+                _overlayPrimary.interactable = canRestart;
+                if (canRestart) _overlayPrimary.onClick.AddListener(() => _onPlayAgain());
+            }
+            else if (gameOver || tutorialDone)
             {
                 UiKit.SetButtonText(_overlayPrimary, tutorialDone ? "Play a real game" : "Play again");
                 _overlayPrimary.onClick.AddListener(() => _onPlayAgain());
@@ -710,6 +726,7 @@ namespace PiratesDice.Game.UI
             {
                 GameEngine engine = table.Engine;
                 SeatState seat = engine.Seats[_seat];
+                _name.text = table.NameOf(_seat);
                 _count.text = seat.IsOut ? "" : $"{seat.DiceCount} {(seat.DiceCount == 1 ? "die" : "dice")}";
                 _cup.color = seat.IsOut ? new Color(1, 1, 1, 0.3f) : Color.white;
                 _skull.gameObject.SetActive(seat.IsOut);

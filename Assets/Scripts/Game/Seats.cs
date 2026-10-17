@@ -7,7 +7,7 @@ using UnityEngine;
 namespace PiratesDice.Game
 {
     /// <summary>
-    /// Whoever sits in a seat: the local player, an AI pirate, or (from milestone 3) an online player.
+    /// Whoever sits in a seat: the local player, an AI pirate, or an online player.
     /// The table asks the seat for a decision on its turn and does not care which kind it is.
     /// </summary>
     public interface ISeatController
@@ -67,14 +67,18 @@ namespace PiratesDice.Game
         readonly System.Random _timing;
         Coroutine _thinking;
 
-        public AiSeatController(AiPirate pirate, MonoBehaviour host, int seed)
+        readonly string _name;
+
+        /// <param name="name">Shown instead of the captain's name, such as when the AI stands in for a player who left.</param>
+        public AiSeatController(AiPirate pirate, MonoBehaviour host, int seed, string name = null)
         {
             _pirate = pirate;
             _host = host;
             _timing = new System.Random(seed);
+            _name = name;
         }
 
-        public string DisplayName => _pirate.Personality.Name;
+        public string DisplayName => _name ?? _pirate.Personality.Name;
         public bool IsLocalHuman => false;
         /// <summary>Seconds scale for thinking time; 0 makes AI moves instant.</summary>
         public float Pace { get; set; } = 1f;
@@ -136,5 +140,86 @@ namespace PiratesDice.Game
             if (_thinking != null) _host.StopCoroutine(_thinking);
             _thinking = null;
         }
+    }
+
+    /// <summary>
+    /// On the host: a seat played by someone on another device. Their moves arrive over the network. If they
+    /// take too long, an AI pirate moves for them so the table never stalls.
+    /// </summary>
+    public sealed class NetworkSeatController : ISeatController
+    {
+        readonly MonoBehaviour _host;
+        readonly AiPirate _standIn;
+        Action<SeatDecision> _pending;
+        PlayerView _view;
+        Coroutine _timer;
+
+        public NetworkSeatController(string name, ulong clientId, MonoBehaviour host, int seed)
+        {
+            DisplayName = name;
+            ClientId = clientId;
+            _host = host;
+            _standIn = new AiPirate(Captains.All[0].WithDifficulty(AiDifficulty.Normal), new SeededRandom(seed));
+        }
+
+        public string DisplayName { get; }
+        public ulong ClientId { get; }
+        public bool IsLocalHuman => false;
+        /// <summary>How long a player has to move before an AI pirate moves for them.</summary>
+        public float TurnSeconds = 45f;
+
+        public void BeginTurn(PlayerView view, Action<SeatDecision> decide)
+        {
+            CancelTurn();
+            _view = view;
+            _pending = decide;
+            _timer = _host.StartCoroutine(Timeout());
+        }
+
+        IEnumerator Timeout()
+        {
+            yield return new WaitForSeconds(TurnSeconds);
+            _timer = null;
+            if (_pending != null) Decide(_standIn.Decide(_view));
+        }
+
+        /// <summary>A move from the player's device. False if it isn't their turn or the move is illegal.</summary>
+        public bool Receive(SeatDecision decision)
+        {
+            if (_pending == null || _view == null) return false;
+            if (decision.Kind == DecisionKind.Bid && !_view.IsValidBid(decision.Bid)) return false;
+            if (decision.Kind == DecisionKind.Liar && !_view.CanCallLiar) return false;
+            if (decision.Kind == DecisionKind.SpotOn && !_view.CanCallSpotOn) return false;
+            Decide(decision);
+            return true;
+        }
+
+        void Decide(SeatDecision decision)
+        {
+            Action<SeatDecision> decide = _pending;
+            CancelTurn();
+            decide(decision);
+        }
+
+        public void CancelTurn()
+        {
+            if (_timer != null) _host.StopCoroutine(_timer);
+            _timer = null;
+            _pending = null;
+        }
+    }
+
+    /// <summary>
+    /// On a player's device: someone else's seat at an online table. The host decides and announces their
+    /// moves, so this seat never decides anything itself.
+    /// </summary>
+    public sealed class MirrorSeatController : ISeatController
+    {
+        public MirrorSeatController(string name) { DisplayName = name; }
+
+        public string DisplayName { get; set; }
+        public bool IsLocalHuman => false;
+        public void BeginTurn(PlayerView view, Action<SeatDecision> decide) { }
+        public void CancelTurn() { }
     }
 }
