@@ -1,7 +1,7 @@
 {
     "name": "PiratesDice.Editor",
     "rootNamespace": "PiratesDice.Editor",
-    "references": ["PiratesDice.Game"],
+    "references": ["PiratesDice.Game", "Unity.RenderPipelines.Core.Runtime", "Unity.RenderPipelines.Universal.Runtime"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
