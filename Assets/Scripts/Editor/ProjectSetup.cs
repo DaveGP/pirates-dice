@@ -53,6 +53,8 @@ namespace PiratesDice.Editor
             PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.Android, "com.davegp.piratesdice");
             PlayerSettings.SetApplicationIdentifier(UnityEditor.Build.NamedBuildTarget.iOS, "com.davegp.piratesdice");
 
+            RenderPipelineSetup.Run();
+
             AssetDatabase.SaveAssets();
             Debug.Log("Pirate's Dice: main scene and player settings are ready. Press Play to start.");
         }

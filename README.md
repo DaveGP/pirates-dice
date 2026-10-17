@@ -28,8 +28,9 @@ Earlier milestones:
 2. In Unity Hub choose **Add > Add project from disk** and pick this folder. If Hub offers a newer Unity 6
    version, accept it.
 3. On first open Unity may ask to enable the new Input System; choose **Yes** and let the editor restart.
-4. The project sets itself up on first open (main scene, Build Settings, portrait orientation). If it
-   doesn't, run **Pirate's Dice > Set Up Project** from the menu bar.
+4. The project sets itself up on first open (main scene, Build Settings, portrait orientation, and the
+   Universal Render Pipeline in `Assets/Settings`). If it doesn't, run **Pirate's Dice > Set Up Project**
+   from the menu bar.
 5. Open `Assets/Scenes/Main.unity` and press **Play**.
 
 Commit the `.meta` files Unity creates on first open alongside your next change.
@@ -86,7 +87,8 @@ table, and check each mirror stays in step and never sees another cup before a r
 | `Assets/Scripts/Game/Online` | Signing in, hosting and joining, and the host and player sides of an online table. |
 | `Assets/Scripts/Game/UI` | Screens, procedural art, tweens. |
 | `Assets/Scripts/Game/Audio` | Synthesised sound effects, music, and sound settings. |
-| `Assets/Scripts/Editor` | First-open project setup. |
+| `Assets/Scripts/Editor` | First-open project setup, render pipeline setup, and the web build. |
+| `Assets/Settings` | The URP asset and its renderer, created by the render pipeline setup. |
 | `Assets/Tests/EditMode` | NUnit tests for Core, AI and Online. |
 | `tests/PiratesDice.Tests` | .NET test project that runs the same tests in CI. |
 
