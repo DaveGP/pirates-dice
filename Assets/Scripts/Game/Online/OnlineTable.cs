@@ -298,6 +298,10 @@ namespace PiratesDice.Game.Online
         /// <summary>A short reason a service call failed, fit to show a player.</summary>
         public static string Describe(Exception e)
         {
+            for (Exception x = e; x != null; x = x.InnerException)
+                if (x.GetType().Name == "UnityProjectNotLinkedException")
+                    return "This project isn't linked to Unity Cloud yet. Link it under Edit > Project Settings > Services.";
+
             Exception inner = e;
             while (inner is AggregateException && inner.InnerException != null) inner = inner.InnerException;
             string text = inner.Message;
