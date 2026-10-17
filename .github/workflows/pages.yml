@@ -1,0 +1,58 @@
+# Publishes the web game to GitHub Pages from a GitHub release.
+# Build it in Unity with Pirate's Dice > Build for Web, then attach Builds/pirates-dice-web.zip to a new release.
+name: Publish web game
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (leave blank for the latest release)
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download the web build from the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          gh release download $TAG --repo "$GITHUB_REPOSITORY" --pattern '*.zip' --dir download
+          mkdir site
+          unzip -q download/*.zip -d site
+          # A zip made by hand in Finder holds the build inside a folder; lift it to the top.
+          if [ ! -f site/index.html ]; then
+            inner=$(dirname "$(find site -maxdepth 3 -name index.html | head -n 1)")
+            if [ -z "$inner" ] || [ ! -f "$inner/index.html" ]; then
+              echo "::error::The release zip has no index.html. Attach the zip from Pirate's Dice > Build for Web."
+              exit 1
+            fi
+            mv "$inner" built && rm -rf site && mv built site
+          fi
+          rm -rf site/__MACOSX
+          touch site/.nojekyll
+          ls -la site site/Build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

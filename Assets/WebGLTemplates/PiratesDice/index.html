@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1c29">
+  <meta name="description" content="Liar's Dice on the high seas. Bluff your way past AI pirates or friends online.">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0d1c29; }
+    body { position: fixed; inset: 0; touch-action: none; -webkit-user-select: none; user-select: none; }
+    #unity-canvas { display: block; width: 100%; height: 100%; background: #0d1c29; outline: none; }
+    #loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-family: Georgia, "Times New Roman", serif; color: #edd9b3; text-align: center; padding: 0 24px; }
+    #loading h1 { margin: 0 0 8px; font-size: clamp(36px, 9vw, 64px); color: #e8b33d; text-shadow: 3px 3px 0 #2e1c0f; }
+    #loading p { margin: 0 0 28px; font-style: italic; font-size: clamp(16px, 4vw, 22px); }
+    #bar { width: min(70vw, 360px); height: 18px; border-radius: 9px; background: #2e1c0f; border: 2px solid #4a2e1a; overflow: hidden; }
+    #fill { width: 0; height: 100%; background: #e8b33d; transition: width 0.2s; }
+    #error { display: none; max-width: 480px; margin-top: 24px; color: #f0a59a; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <div id="loading">
+    <h1>{{{ PRODUCT_NAME }}}</h1>
+    <p>Hoisting the sails...</p>
+    <div id="bar"><div id="fill"></div></div>
+    <div id="error"></div>
+  </div>
+  <script>
+    var canvas = document.getElementById("unity-canvas");
+    var loading = document.getElementById("loading");
+    var fill = document.getElementById("fill");
+    var errorBox = document.getElementById("error");
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = "block";
+    }
+
+    // Warnings go to the console; only errors are shown to players.
+    function unityShowBanner(message, type) {
+      if (type === "error") showError(message);
+      else console.warn(message);
+    }
+
+    var buildUrl = "Build";
+    var config = {
+      arguments: [],
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+      workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      showBanner: unityShowBanner,
+      // Sharp on phones without rendering at 3x or 4x, which costs battery for no visible gain.
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    };
+
+    var script = document.createElement("script");
+    script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        fill.style.width = Math.round(progress * 100) + "%";
+      }).then(function () {
+        loading.style.display = "none";
+      }).catch(function (message) {
+        showError("The game couldn't start: " + message);
+      });
+    };
+    script.onerror = function () { showError("The game files couldn't be loaded. Try refreshing the page."); };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>
