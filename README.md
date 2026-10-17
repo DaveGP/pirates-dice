@@ -48,8 +48,23 @@ that package. Each Editor play session signs in as a new player, so they never c
 
 ## Build
 
-- **Web:** File > Build Profiles > Web, then Build. Host the output folder on any static web host.
+- **Web:** run **Pirate's Dice > Build for Web**. It applies the web settings, builds to `Builds/Web`, and
+  zips it to `Builds/pirates-dice-web.zip`. The build works on any static host, GitHub Pages included.
 - **Android:** File > Build Profiles > Android, then Build And Run with a phone connected.
+
+## Publish to the web
+
+The game is published on GitHub Pages from GitHub releases, at https://davegp.github.io/pirates-dice/.
+
+One-time setup: on GitHub open the repository's **Settings > Pages** and set **Source** to **GitHub Actions**.
+
+Each release:
+
+1. In Unity, run **Pirate's Dice > Build for Web** (needs the Web Build Support module).
+2. On GitHub, open **Releases > Draft a new release**, create a tag such as `v0.1.0`, attach
+   `Builds/pirates-dice-web.zip`, and publish.
+3. The **Publish web game** workflow puts that build live in a minute or two. To republish an older
+   release, run the workflow by hand from the Actions tab with its tag.
 
 ## Tests
 

@@ -13,7 +13,7 @@ namespace PiratesDice.Editor
     [InitializeOnLoad]
     static class ProjectSetup
     {
-        const string ScenePath = "Assets/Scenes/Main.unity";
+        internal const string ScenePath = "Assets/Scenes/Main.unity";
         const string DoneKey = "PiratesDice.ProjectSetup.Done";
 
         static ProjectSetup()

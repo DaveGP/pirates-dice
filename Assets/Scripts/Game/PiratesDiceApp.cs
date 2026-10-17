@@ -30,7 +30,12 @@ namespace PiratesDice.Game
         void Awake()
         {
             DontDestroyOnLoad(gameObject);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            // In a browser the page's own animation timer paces frames; a fixed rate fights it.
+            Application.targetFrameRate = -1;
+#else
             Application.targetFrameRate = 60;
+#endif
             // Keep the connection alive while another window has focus, such as a second test client.
             Application.runInBackground = true;
 
