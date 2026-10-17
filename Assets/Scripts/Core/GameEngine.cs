@@ -130,6 +130,28 @@ namespace PiratesDice.Core
             Phase = TablePhase.Bidding;
         }
 
+        /// <summary>
+        /// For a network mirror of a table: replaces every cup's dice with the ones the host revealed, so the
+        /// challenge that follows resolves exactly as it did on the host. Each seat must keep its dice count.
+        /// </summary>
+        public void RevealDice(int[][] dice)
+        {
+            if (Phase != TablePhase.Bidding) throw new InvalidOperationException("Dice can only be revealed during bidding.");
+            if (dice == null || dice.Length != _seats.Length) throw new ArgumentException("One set of dice is needed per seat.", nameof(dice));
+            for (int i = 0; i < _seats.Length; i++)
+            {
+                if (dice[i].Length != _seats[i].DiceCount)
+                    throw new ArgumentException($"Seat {i} holds {_seats[i].DiceCount} dice, not {dice[i].Length}.", nameof(dice));
+                if (dice[i].Any(d => d < 1 || d > RuleSettings.Faces))
+                    throw new ArgumentException($"Seat {i} has a die that is not 1 to {RuleSettings.Faces}.", nameof(dice));
+            }
+            for (int i = 0; i < _seats.Length; i++)
+            {
+                _seats[i].DiceInternal = (int[])dice[i].Clone();
+                Array.Sort(_seats[i].DiceInternal);
+            }
+        }
+
         public BidContext ContextFor(int seat)
         {
             bool mayChangeFace = !IsPalificoRound || _seats[seat].DiceCount == 1;

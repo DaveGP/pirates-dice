@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace PiratesDice.Game.UI
 {
-    /// <summary>Main menu: pick how many AI pirates join, how sharp they are, and the house rules.</summary>
+    /// <summary>Main menu: pick how many AI pirates join, how sharp they are, and the house rules, or head online.</summary>
     public sealed class MenuView
     {
         readonly GameConfig _config;
@@ -17,7 +17,8 @@ namespace PiratesDice.Game.UI
 
         public readonly GameObject Root;
 
-        public MenuView(Transform column, GameConfig config, Action<GameConfig> onStart, Action onTutorial)
+        /// <param name="notice">A line to show under the menu, such as why an online table closed.</param>
+        public MenuView(Transform column, GameConfig config, Action<GameConfig> onStart, Action onTutorial, Action onOnline, string notice = null)
         {
             _config = config;
             _onStart = onStart;
@@ -45,8 +46,11 @@ namespace PiratesDice.Game.UI
                 Tween.PopIn(face.transform, 0.35f, 0.1f + i * 0.08f);
             }
 
-            Button howTo = UiKit.Button("HowToPlay", Root.transform, "How to play", Palette.Kelp, () => onTutorial(), 46);
-            UiKit.Size(howTo, 520, 120);
+            RectTransform modes = Row(120);
+            Button howTo = UiKit.Button("HowToPlay", modes, "How to play", Palette.Kelp, () => onTutorial(), 46);
+            UiKit.Size(howTo, 440, 120);
+            Button online = UiKit.Button("PlayOnline", modes, "Play online", Palette.Kelp, () => { AudioDirector.Play(Sfx.Click); onOnline(); }, 46);
+            UiKit.Size(online, 440, 120);
             SectionLabel("Pirates at the table");
             RectTransform count = Row(130);
             UiKit.Size(UiKit.Button("Fewer", count, "-", Palette.Wood, () => ChangeOpponents(-1), 72), 130, 130);
@@ -82,9 +86,9 @@ namespace PiratesDice.Game.UI
             UiKit.Size(start, 640, 160);
             start.gameObject.AddComponent<Pulse>().Amount = 0.025f;
 
-            Text online = UiKit.Label("Online", Root.transform, "Online tables arrive in a later update.", 32, Palette.Parchment);
-            UiKit.Shadowed(online);
-            UiKit.Size(online, height: 50);
+            Text noticeLabel = UiKit.Label("Notice", Root.transform, notice ?? "", 34, Palette.Gold, style: FontStyle.Italic);
+            UiKit.Shadowed(noticeLabel);
+            UiKit.Size(noticeLabel, 960, 50);
 
             Refresh();
         }

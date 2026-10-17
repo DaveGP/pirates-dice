@@ -297,7 +297,7 @@ namespace PiratesDice.Game.UI
                 default:
                     int h = 0;
                     foreach (char ch in name ?? "") h = h * 31 + ch;
-                    h = Math.Abs(h);
+                    h &= 0x7fffffff;
                     return Make(Color.HSVToRGB((h % 360) / 360f, 0.55f, 0.5f), new Color(0.25f, 0.2f, 0.3f), Skins[h % Skins.Length],
                         new Color(0.2f, 0.12f, 0.08f), h % 3 == 0, h % 2 == 0);
             }

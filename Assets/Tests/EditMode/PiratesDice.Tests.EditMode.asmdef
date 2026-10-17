@@ -1,7 +1,7 @@
 {
     "name": "PiratesDice.Tests.EditMode",
     "rootNamespace": "PiratesDice.Tests",
-    "references": ["PiratesDice.Core", "PiratesDice.AI", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+    "references": ["PiratesDice.Core", "PiratesDice.AI", "PiratesDice.Online", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
