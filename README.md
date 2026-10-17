@@ -3,15 +3,19 @@
 A pirate-themed Liar's Dice game for web and mobile, built in Unity 6. Up to six pirates share a table,
 and every seat can be you, an AI pirate, or (in a later milestone) an online player.
 
-## Status: milestone 1, offline vs AI
+## Status: milestone 2, pirate look and feel
 
 - Full rules: bidding, wild 1s, **Liar!**, **Spot on!**, elimination, and optional Palifico rounds.
-- Six named AI captains, each with their own boldness and bluffing, at Easy, Normal or Hard.
-- Placeholder table and menu UI built from code, laid out as a portrait column that fits phones and browsers.
+- Six named AI captains, each with a portrait and their own boldness and bluffing, at Easy, Normal or Hard.
+- A guided **How to play** lesson: three scripted rounds that teach Liar, bluffing and Spot on.
+- Tavern art (wood, parchment, leather cups, coins), dice roll and cup-lift animations, and lost dice going overboard.
+- Synthesised sound effects and a "Drunken Sailor" shanty loop, with music and effects toggles.
+- All art and audio is generated in code at startup (`Art.cs`, `SoundBank.cs`), so there are no asset files to
+  license; swap in hand-made sprites or clips later by replacing one property each.
 
 ## Open and play
 
-1. Install **Unity 6 LTS** (6000.0 or newer) with the **WebGL** and **Android** build modules.
+1. Install **Unity 6** (6000.6 or newer) with the **WebGL** and **Android** build modules.
 2. In Unity Hub choose **Add > Add project from disk** and pick this folder. If Hub offers a newer Unity 6
    version, accept it.
 3. On first open Unity may ask to enable the new Input System; choose **Yes** and let the editor restart.
@@ -37,9 +41,11 @@ The rules engine and AI are plain C# with no Unity dependency, so their tests ru
 
 | Folder | What lives there |
 | --- | --- |
-| `Assets/Scripts/Core` | Rules engine: bids, table state, challenges. No Unity references. |
+| `Assets/Scripts/Core` | Rules engine: bids, table state, challenges, the tutorial script. No Unity references. |
 | `Assets/Scripts/AI` | AI pirates: odds, personalities, captains. No Unity references. |
-| `Assets/Scripts/Game` | Unity layer: seat controllers, table loop, app entry point, UI. |
+| `Assets/Scripts/Game` | Unity layer: seat controllers, table loop, app entry point. |
+| `Assets/Scripts/Game/UI` | Screens, procedural art, tweens. |
+| `Assets/Scripts/Game/Audio` | Synthesised sound effects, music, and sound settings. |
 | `Assets/Scripts/Editor` | First-open project setup. |
 | `Assets/Tests/EditMode` | NUnit tests for Core and AI. |
 | `tests/PiratesDice.Tests` | .NET test project that runs the same tests in CI. |

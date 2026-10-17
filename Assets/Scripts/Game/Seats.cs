@@ -28,6 +28,8 @@ namespace PiratesDice.Game
         public string DisplayName { get; }
         public bool IsLocalHuman => true;
         public bool IsWaiting => _pending != null;
+        /// <summary>Optional extra check on moves, used by the tutorial to steer the player.</summary>
+        public Func<SeatDecision, bool> Allow;
         public PlayerView CurrentView { get; private set; }
 
         public event Action TurnStarted;
@@ -46,6 +48,7 @@ namespace PiratesDice.Game
             if (decision.Kind == DecisionKind.Bid && !CurrentView.IsValidBid(decision.Bid)) return false;
             if (decision.Kind == DecisionKind.Liar && !CurrentView.CanCallLiar) return false;
             if (decision.Kind == DecisionKind.SpotOn && !CurrentView.CanCallSpotOn) return false;
+            if (Allow != null && !Allow(decision)) return false;
 
             Action<SeatDecision> decide = _pending;
             _pending = null;
@@ -88,6 +91,44 @@ namespace PiratesDice.Game
             if (delay > 0) yield return new WaitForSeconds(delay);
             _thinking = null;
             decide(_pirate.Decide(view));
+        }
+
+        public void CancelTurn()
+        {
+            if (_thinking != null) _host.StopCoroutine(_thinking);
+            _thinking = null;
+        }
+    }
+
+    /// <summary>A seat that plays a fixed list of moves, for the tutorial.</summary>
+    public sealed class ScriptedSeatController : ISeatController
+    {
+        readonly MonoBehaviour _host;
+        readonly Func<SeatDecision> _next;
+        Coroutine _thinking;
+
+        public ScriptedSeatController(string name, MonoBehaviour host, Func<SeatDecision> next)
+        {
+            DisplayName = name;
+            _host = host;
+            _next = next;
+        }
+
+        public string DisplayName { get; }
+        public bool IsLocalHuman => false;
+        public float ThinkSeconds = 1.6f;
+
+        public void BeginTurn(PlayerView view, Action<SeatDecision> decide)
+        {
+            CancelTurn();
+            _thinking = _host.StartCoroutine(Think(decide));
+        }
+
+        IEnumerator Think(Action<SeatDecision> decide)
+        {
+            yield return new WaitForSeconds(ThinkSeconds);
+            _thinking = null;
+            decide(_next());
         }
 
         public void CancelTurn()
