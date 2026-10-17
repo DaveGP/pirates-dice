@@ -41,10 +41,36 @@ namespace PiratesDice.Game
         public event Action Changed;
         /// <summary>Cups were lifted. The view shows the reveal, then calls <see cref="NextRound"/>.</summary>
         public event Action<RoundResult> Revealed;
+        /// <summary>Fresh dice were rolled.</summary>
+        public event Action RoundStarted;
+        /// <summary>A seat bid (challenges arrive through <see cref="Revealed"/>).</summary>
+        public event Action<int, Bid> BidPlaced;
+
+        /// <summary>The lesson being played, or null in a normal game.</summary>
+        public TutorialScript Tutorial { get; private set; }
+        /// <summary>While true the tutorial is showing its intro and the player cannot move yet.</summary>
+        public bool TutorialPaused { get; set; }
+        int _tutorialRound = -1, _tutorialMove;
+
+        public TutorialRound CurrentTutorialRound =>
+            Tutorial != null && _tutorialRound >= 0 && _tutorialRound < Tutorial.Rounds.Count ? Tutorial.Rounds[_tutorialRound] : null;
+
+        public TutorialMove CurrentTutorialMove
+        {
+            get
+            {
+                TutorialRound round = CurrentTutorialRound;
+                return round != null && _tutorialMove < round.Moves.Count ? round.Moves[_tutorialMove] : null;
+            }
+        }
+
+        public bool TutorialFinished => Tutorial != null && _tutorialRound >= Tutorial.Rounds.Count - 1 && CurrentTutorialMove == null;
 
         public void StartGame(GameConfig config)
         {
             StopTurns();
+            Tutorial = null;
+            TutorialPaused = false;
             int seed = config.Seed != 0 ? config.Seed : Environment.TickCount;
             var rng = new SeededRandom(seed);
 
@@ -65,15 +91,49 @@ namespace PiratesDice.Game
             NextRound();
         }
 
+        /// <summary>Starts the scripted lesson: you against one pirate, with fixed dice and moves.</summary>
+        public void StartTutorial(TutorialScript script, string playerName)
+        {
+            StopTurns();
+            Tutorial = script;
+            TutorialPaused = true;
+            _tutorialRound = -1;
+            _tutorialMove = 0;
+
+            var local = new LocalSeatController(playerName);
+            local.Allow = decision =>
+            {
+                TutorialMove move = CurrentTutorialMove;
+                return !TutorialPaused && move != null && move.Seat == LocalSeat && Same(move.Decision, decision);
+            };
+            _seats = new ISeatController[script.SeatCount];
+            _seats[LocalSeat] = local;
+            for (int i = 1; i < script.SeatCount; i++)
+                _seats[i] = new ScriptedSeatController(script.OpponentName, this, () => CurrentTutorialMove.Decision);
+
+            _engine = new GameEngine(script.SeatCount, new RuleSettings(), script.CreateDice(), script.FirstSeat);
+            SeatLastActions = new string[script.SeatCount];
+            NextRound();
+        }
+
+        static bool Same(SeatDecision a, SeatDecision b) => a.Kind == b.Kind && (a.Kind != DecisionKind.Bid || a.Bid == b.Bid);
+
         public void NextRound()
         {
             if (_engine == null || _engine.Phase == TablePhase.GameOver) return;
+            if (Tutorial != null)
+            {
+                if (_tutorialRound >= Tutorial.Rounds.Count - 1) return;
+                _tutorialRound++;
+                _tutorialMove = 0;
+            }
             _engine.StartRound();
             for (int i = 0; i < SeatLastActions.Length; i++) SeatLastActions[i] = null;
             ISeatController opener = _seats[_engine.CurrentSeat];
             LastAction = _engine.IsPalificoRound
                 ? $"Palifico round! No wild 1s. {opener.DisplayName} opens."
                 : $"Round {_engine.RoundNumber}. {opener.DisplayName} opens the bidding.";
+            RoundStarted?.Invoke();
             RequestTurn();
         }
 
@@ -109,10 +169,13 @@ namespace PiratesDice.Game
                 return;
             }
 
+            if (Tutorial != null) _tutorialMove++;
+
             if (result == null)
             {
                 SeatLastActions[seat] = $"Bid {decision.Bid}";
                 LastAction = $"{name} bids {decision.Bid}.";
+                BidPlaced?.Invoke(seat, decision.Bid);
                 RequestTurn();
                 return;
             }

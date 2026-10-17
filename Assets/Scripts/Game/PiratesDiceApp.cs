@@ -1,3 +1,5 @@
+using PiratesDice.Core;
+using PiratesDice.Game.Audio;
 using PiratesDice.Game.UI;
 using UnityEngine;
 
@@ -37,16 +39,21 @@ namespace PiratesDice.Game
                 cam.orthographic = true;
             }
 
+            gameObject.AddComponent<AudioDirector>();
+
             Canvas canvas = UiKit.CreateCanvas("UI");
             canvas.transform.SetParent(transform, false);
 
             Image(UiKit.Stretch(UiKit.Rect("Sea", canvas.transform)), Palette.Sea);
 
-            // A fixed 1080x1920 column; the canvas scaler fits it to any screen.
+            // A fixed 1080x1920 column of tavern-table wood; the canvas scaler fits it to any screen.
             RectTransform column = UiKit.Rect("Column", canvas.transform);
             column.anchorMin = column.anchorMax = new Vector2(0.5f, 0.5f);
             column.sizeDelta = new Vector2(1080, 1920);
-            Image(column, new Color(0.10f, 0.16f, 0.20f));
+            var wood = column.gameObject.AddComponent<UnityEngine.UI.Image>();
+            wood.sprite = Art.Wood;
+            wood.type = UnityEngine.UI.Image.Type.Tiled;
+            wood.pixelsPerUnitMultiplier = 0.5f;
             _column = column;
 
             _table = gameObject.AddComponent<TableController>();
@@ -61,7 +68,7 @@ namespace PiratesDice.Game
             _tableView?.Dispose();
             _tableView = null;
             if (_menu != null) Destroy(_menu.Root);
-            _menu = new MenuView(_column, _config, StartGame);
+            _menu = new MenuView(_column, _config, StartGame, StartTutorial);
         }
 
         void StartGame(GameConfig config)
@@ -72,6 +79,16 @@ namespace PiratesDice.Game
             _tableView?.Dispose();
 
             _table.StartGame(config);
+            _tableView = new TableView(_column, _table, ShowMenu, () => StartGame(_config));
+        }
+
+        void StartTutorial()
+        {
+            if (_menu != null) Destroy(_menu.Root);
+            _menu = null;
+            _tableView?.Dispose();
+
+            _table.StartTutorial(TutorialScript.Standard(), _config.PlayerName);
             _tableView = new TableView(_column, _table, ShowMenu, () => StartGame(_config));
         }
     }

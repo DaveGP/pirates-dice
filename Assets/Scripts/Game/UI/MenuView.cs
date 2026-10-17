@@ -1,5 +1,6 @@
 using System;
 using PiratesDice.AI;
+using PiratesDice.Game.Audio;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,25 +13,40 @@ namespace PiratesDice.Game.UI
         readonly Action<GameConfig> _onStart;
         Text _opponents;
         readonly Button[] _difficulty = new Button[3];
-        Button _wild, _spotOn, _palifico;
+        Button _wild, _spotOn, _palifico, _music, _sfx;
 
         public readonly GameObject Root;
 
-        public MenuView(Transform column, GameConfig config, Action<GameConfig> onStart)
+        public MenuView(Transform column, GameConfig config, Action<GameConfig> onStart, Action onTutorial)
         {
             _config = config;
             _onStart = onStart;
 
             Root = UiKit.Rect("Menu", column).gameObject;
             UiKit.Stretch((RectTransform)Root.transform);
-            UiKit.Column(Root, 36, 60, TextAnchor.MiddleCenter);
+            UiKit.Column(Root, 26, 50, TextAnchor.MiddleCenter);
 
             Text title = UiKit.Label("Title", Root.transform, "Pirate's Dice", 128, Palette.Gold, style: FontStyle.Bold);
+            var outline = title.gameObject.AddComponent<Outline>();
+            outline.effectColor = Palette.WoodDark;
+            outline.effectDistance = new Vector2(4, -4);
+            UiKit.Shadowed(title);
             UiKit.Size(title, height: 170);
             Text tagline = UiKit.Label("Tagline", Root.transform, "Liar's Dice on the high seas", 46, Palette.Parchment, style: FontStyle.Italic);
-            UiKit.Size(tagline, height: 80);
+            UiKit.Shadowed(tagline);
+            UiKit.Size(tagline, height: 70);
 
-            Spacer(40);
+            // The crew, waiting at the table.
+            RectTransform crew = Row(120);
+            for (int i = 0; i < Captains.All.Length; i++)
+            {
+                Image face = UiKit.Picture("Captain", crew, Art.Portrait(Captains.All[i].Name), Color.white, sliced: false);
+                UiKit.Size(face, 116, 116);
+                Tween.PopIn(face.transform, 0.35f, 0.1f + i * 0.08f);
+            }
+
+            Button howTo = UiKit.Button("HowToPlay", Root.transform, "How to play", Palette.Kelp, () => onTutorial(), 46);
+            UiKit.Size(howTo, 520, 120);
             SectionLabel("Pirates at the table");
             RectTransform count = Row(130);
             UiKit.Size(UiKit.Button("Fewer", count, "-", Palette.Wood, () => ChangeOpponents(-1), 72), 130, 130);
@@ -44,7 +60,7 @@ namespace PiratesDice.Game.UI
             for (int i = 0; i < 3; i++)
             {
                 var level = (AiDifficulty)i;
-                _difficulty[i] = UiKit.Button(names[i], diff, names[i], Palette.Wood, () => { _config.Difficulty = level; Refresh(); });
+                _difficulty[i] = UiKit.Button(names[i], diff, names[i], Palette.Wood, () => { _config.Difficulty = level; AudioDirector.Play(Sfx.Click); Refresh(); });
                 UiKit.Size(_difficulty[i], 280, 120);
             }
 
@@ -54,12 +70,21 @@ namespace PiratesDice.Game.UI
             _spotOn = RuleButton(rules, () => _config.Rules.SpotOn = !_config.Rules.SpotOn);
             _palifico = RuleButton(rules, () => _config.Rules.Palifico = !_config.Rules.Palifico);
 
-            Spacer(60);
-            Button start = UiKit.Button("SetSail", Root.transform, "Set sail!", Palette.Blood, () => _onStart(_config), 64);
-            UiKit.Size(start, 640, 170);
+            SectionLabel("Sound");
+            RectTransform sound = Row(110);
+            _music = UiKit.Button("Music", sound, "", Palette.Kelp, () => { ToggleAudio(music: true); Refresh(); }, 38);
+            UiKit.Size(_music, 400, 110);
+            _sfx = UiKit.Button("Effects", sound, "", Palette.Kelp, () => { ToggleAudio(music: false); Refresh(); }, 38);
+            UiKit.Size(_sfx, 400, 110);
 
-            Text online = UiKit.Label("Online", Root.transform, "Online tables arrive in a later update.", 36, Palette.Parchment);
-            UiKit.Size(online, height: 60);
+            Spacer(20);
+            Button start = UiKit.Button("SetSail", Root.transform, "Set sail!", Palette.Blood, () => { AudioDirector.Play(Sfx.Coin); _onStart(_config); }, 64);
+            UiKit.Size(start, 640, 160);
+            start.gameObject.AddComponent<Pulse>().Amount = 0.025f;
+
+            Text online = UiKit.Label("Online", Root.transform, "Online tables arrive in a later update.", 32, Palette.Parchment);
+            UiKit.Shadowed(online);
+            UiKit.Size(online, height: 50);
 
             Refresh();
         }
@@ -79,6 +104,18 @@ namespace PiratesDice.Game.UI
             SetRule(_wild, "Wild 1s", _config.Rules.WildOnes);
             SetRule(_spotOn, "Spot on", _config.Rules.SpotOn);
             SetRule(_palifico, "Palifico", _config.Rules.Palifico);
+            AudioDirector audio = AudioDirector.Instance;
+            SetRule(_music, "Music", audio != null && audio.MusicOn);
+            SetRule(_sfx, "Sound effects", audio != null && audio.SfxOn);
+        }
+
+        static void ToggleAudio(bool music)
+        {
+            AudioDirector audio = AudioDirector.Instance;
+            if (audio == null) return;
+            if (music) audio.MusicOn = !audio.MusicOn;
+            else audio.SfxOn = !audio.SfxOn;
+            AudioDirector.Play(Sfx.Click);
         }
 
         static void SetRule(Button button, string name, bool on)
@@ -89,7 +126,7 @@ namespace PiratesDice.Game.UI
 
         Button RuleButton(Transform parent, Action toggle)
         {
-            Button button = UiKit.Button("Rule", parent, "", Palette.Kelp, () => { toggle(); Refresh(); }, 38);
+            Button button = UiKit.Button("Rule", parent, "", Palette.Kelp, () => { toggle(); AudioDirector.Play(Sfx.Click); Refresh(); }, 38);
             UiKit.Size(button, 300, 120);
             return button;
         }
@@ -104,8 +141,9 @@ namespace PiratesDice.Game.UI
 
         void SectionLabel(string text)
         {
-            Text label = UiKit.Label("Section", Root.transform, text, 40, Palette.Parchment, style: FontStyle.Bold);
-            UiKit.Size(label, height: 56);
+            Text label = UiKit.Label("Section", Root.transform, text, 38, Palette.Parchment, style: FontStyle.Bold);
+            UiKit.Shadowed(label);
+            UiKit.Size(label, height: 50);
         }
 
         void Spacer(float height) => UiKit.Size(UiKit.Rect("Spacer", Root.transform), height: height);

@@ -166,6 +166,27 @@ namespace PiratesDice.Game.UI
             return le;
         }
 
+        /// <summary>An image from one of the <see cref="Art"/> sprites, sliced when the sprite has borders.</summary>
+        public static Image Picture(string name, Transform parent, Sprite sprite, Color tint, bool sliced = true)
+        {
+            RectTransform rt = Rect(name, parent);
+            var image = rt.gameObject.AddComponent<Image>();
+            image.sprite = sprite;
+            image.color = tint;
+            image.type = sliced && sprite.border != Vector4.zero ? Image.Type.Sliced : Image.Type.Simple;
+            image.preserveAspect = !sliced;
+            return image;
+        }
+
+        /// <summary>Adds a soft drop shadow so light text reads on wood.</summary>
+        public static Text Shadowed(Text text)
+        {
+            var shadow = text.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0, 0, 0, 0.6f);
+            shadow.effectDistance = new Vector2(2, -3);
+            return text;
+        }
+
         public static void Clear(Transform t)
         {
             for (int i = t.childCount - 1; i >= 0; i--) UnityEngine.Object.Destroy(t.GetChild(i).gameObject);
