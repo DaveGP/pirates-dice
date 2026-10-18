@@ -31,7 +31,9 @@ namespace PiratesDice.Game.UI
         static Sprite _circle;
         static Sprite _rounded;
 
-        public static Font Font => _font ? _font : (_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
+        // A font file shipped with the game: the built-in LegacyRuntime font draws no text in a web build.
+        public static Font Font => _font ? _font
+            : (_font = Resources.Load<Font>("Fonts/AlegreyaSans-Medium") ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
         public static Sprite Circle => _circle ? _circle : (_circle = MakeCircle(64));
         public static Sprite Rounded => _rounded ? _rounded : (_rounded = MakeRounded(64, 14));
 
