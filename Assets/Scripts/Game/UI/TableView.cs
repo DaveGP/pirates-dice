@@ -122,7 +122,7 @@ namespace PiratesDice.Game.UI
             UiKit.Size(grid, height: 475);
 
             for (int seat = 1; seat < _table.Seats.Count; seat++)
-                _cards.Add(new SeatCard(grid, seat, _table.NameOf(seat)));
+                _cards.Add(new SeatCard(grid, seat, _table));
         }
 
         void BuildBanner()
@@ -491,7 +491,7 @@ namespace PiratesDice.Game.UI
                 int face = i + 1;
                 bool legal = active && view.MinimumQuantity(face) > 0;
                 _faceButtons[i].interactable = legal;
-                _faceButtons[i].image.color = face == _face ? Palette.Gold : Palette.WoodDark;
+                UiKit.SetButtonColor(_faceButtons[i], face == _face ? Palette.Gold : Palette.WoodDark);
                 _faceDice[i].SetFace(face, dim: !legal);
             }
 
@@ -588,7 +588,7 @@ namespace PiratesDice.Game.UI
                 UiKit.Row(row.gameObject, 12, 0, TextAnchor.MiddleLeft);
                 UiKit.Size(row, height: 84);
 
-                Image portrait = UiKit.Picture("Portrait", row, seat == TableController.LocalSeat ? Art.Portrait("You") : Art.Portrait(_table.NameOf(seat)), Color.white, sliced: false);
+                Image portrait = UiKit.Picture("Portrait", row, seat == TableController.LocalSeat ? Art.Portrait("You") : Art.Portrait(_table.NameOf(seat), _table.CrewSlotOf(seat)), Color.white, sliced: false);
                 UiKit.Size(portrait, 72, 72);
                 Color nameColor = seat == result.AffectedSeat ? Palette.Blood : Palette.Ink;
                 UiKit.Size(UiKit.Label("Name", row, _table.NameOf(seat), 32, nameColor, TextAnchor.MiddleLeft, FontStyle.Bold), 270, 84);
@@ -687,9 +687,10 @@ namespace PiratesDice.Game.UI
             readonly Text _name, _count, _status;
             readonly Pulse _pulse;
 
-            public SeatCard(Transform parent, int seat, string name)
+            public SeatCard(Transform parent, int seat, TableController table)
             {
                 _seat = seat;
+                string name = table.NameOf(seat);
                 _bg = UiKit.Picture("Seat" + seat, parent, Art.Parchment, Palette.Bone);
                 UiKit.Column(_bg.gameObject, 6, 12, TextAnchor.MiddleCenter);
                 _pulse = _bg.gameObject.AddComponent<Pulse>();
@@ -698,7 +699,7 @@ namespace PiratesDice.Game.UI
                 RectTransform top = UiKit.Rect("Top", _bg.transform);
                 UiKit.Row(top.gameObject, 10, 0, TextAnchor.MiddleLeft);
                 UiKit.Size(top, height: 76);
-                _portrait = UiKit.Picture("Portrait", top, Art.Portrait(name), Color.white, sliced: false);
+                _portrait = UiKit.Picture("Portrait", top, Art.Portrait(name, table.CrewSlotOf(seat)), Color.white, sliced: false);
                 UiKit.Size(_portrait, 74, 74);
                 _skull = UiKit.Picture("Skull", _portrait.transform, Art.Skull, Color.white, sliced: false);
                 UiKit.Stretch(_skull.rectTransform, 6);
@@ -727,6 +728,7 @@ namespace PiratesDice.Game.UI
                 GameEngine engine = table.Engine;
                 SeatState seat = engine.Seats[_seat];
                 _name.text = table.NameOf(_seat);
+                _portrait.sprite = Art.Portrait(_name.text, table.CrewSlotOf(_seat));
                 _count.text = seat.IsOut ? "" : $"{seat.DiceCount} {(seat.DiceCount == 1 ? "die" : "dice")}";
                 _cup.color = seat.IsOut ? new Color(1, 1, 1, 0.3f) : Color.white;
                 _skull.gameObject.SetActive(seat.IsOut);

@@ -4,29 +4,60 @@ using UnityEngine;
 
 namespace PiratesDice.Game.UI
 {
-    /// <summary>
-    /// Procedural art: wood, parchment, leather cups, coins, skulls and captain portraits, painted into textures
-    /// at startup. It gives the game a finished look without art files, and each sprite can be swapped for
-    /// hand-drawn art later by replacing one property.
-    /// </summary>
+    /// <summary>Loads the painted sprites and supplies procedural art when a sprite is absent.</summary>
     public static class Art
     {
-        static Sprite _wood, _parchment, _cup, _coin, _skull, _plank;
+        static readonly Dictionary<string, Sprite> Sprites = new Dictionary<string, Sprite>();
         static readonly Dictionary<string, Sprite> Portraits = new Dictionary<string, Sprite>();
 
-        public static Sprite Wood => _wood ? _wood : (_wood = MakeWood(256, 256, dark: false));
-        public static Sprite Plank => _plank ? _plank : (_plank = MakeWood(128, 128, dark: true, border: 18));
-        public static Sprite Parchment => _parchment ? _parchment : (_parchment = MakeParchment(128, 20));
-        public static Sprite Cup => _cup ? _cup : (_cup = MakeCup(120, 140));
-        public static Sprite Coin => _coin ? _coin : (_coin = MakeCoin(64));
-        public static Sprite Skull => _skull ? _skull : (_skull = MakeSkull(96));
-
-        public static Sprite Portrait(string captain)
+        static Sprite Load(string name)
         {
-            if (Portraits.TryGetValue(captain, out Sprite s) && s) return s;
-            s = MakePortrait(128, CaptainLook.For(captain));
-            Portraits[captain] = s;
-            return s;
+            if (!Sprites.TryGetValue(name, out Sprite sprite))
+                Sprites[name] = sprite = Resources.Load<Sprite>("Art/" + name);
+            return sprite;
+        }
+
+        public static Sprite Wood => Load("table_wood") ?? (FallbackWood ??= MakeWood(256, 256, dark: false));
+        public static Sprite Plank => Load("panel_plank") ?? (FallbackPlank ??= MakeWood(128, 128, dark: true, border: 18));
+        public static Sprite Parchment => Load("panel_parchment") ?? (FallbackParchment ??= MakeParchment(128, 20));
+        public static Sprite Cup => Load("cup") ?? (FallbackCup ??= MakeCup(120, 140));
+        public static Sprite Coin => Load("coin") ?? (FallbackCoin ??= MakeCoin(64));
+        public static Sprite Skull => Load("skull") ?? (FallbackSkull ??= MakeSkull(96));
+        public static Sprite Logo => Load("logo");
+        public static Sprite SeaBackdrop => Load("sea_backdrop");
+
+        static Sprite FallbackWood, FallbackPlank, FallbackParchment, FallbackCup, FallbackCoin, FallbackSkull;
+
+        public static Sprite Die(int face) => face >= 1 && face <= 6 ? Load("die_" + face) : null;
+
+        public static Sprite Button(Color color)
+        {
+            if (color == Palette.Blood) return Load("button_red");
+            if (color == Palette.Kelp) return Load("button_green");
+            if (color == Palette.Wood || color == Palette.WoodDark) return Load("button_wood");
+            return null;
+        }
+
+        public static Sprite Portrait(string captain, int crewSlot = -1)
+        {
+            string name = crewSlot >= 0 ? "crew_" + (crewSlot % 4 + 1) : captain switch
+            {
+                "Calico Jane" => "calico_jane",
+                "One-Eyed Morgan" => "one_eyed_morgan",
+                "Barnacle Bess" => "barnacle_bess",
+                "Salty Pete" => "salty_pete",
+                "Mad Maggie Flint" => "mad_maggie_flint",
+                "Old Tom Rumbelly" => "old_tom_rumbelly",
+                "You" => "you",
+                "Quartermaster" => "quartermaster",
+                _ => null,
+            };
+            if (name != null && Load("portrait_" + name) is Sprite portrait) return portrait;
+
+            captain ??= "";
+            if (!Portraits.TryGetValue(captain, out Sprite fallback))
+                Portraits[captain] = fallback = MakePortrait(128, CaptainLook.For(captain));
+            return fallback;
         }
 
         // ---------- painting helpers ----------

@@ -27,12 +27,22 @@ namespace PiratesDice.Game.UI
             UiKit.Stretch((RectTransform)Root.transform);
             UiKit.Column(Root, 26, 50, TextAnchor.MiddleCenter);
 
-            Text title = UiKit.Label("Title", Root.transform, "Pirate's Dice", 128, Palette.Gold, style: FontStyle.Bold);
-            var outline = title.gameObject.AddComponent<Outline>();
-            outline.effectColor = Palette.WoodDark;
-            outline.effectDistance = new Vector2(4, -4);
-            UiKit.Shadowed(title);
-            UiKit.Size(title, height: 170);
+            Sprite logo = Art.Logo;
+            if (logo != null)
+            {
+                Image title = UiKit.Picture("Title", Root.transform, logo, Color.white, sliced: false);
+                title.raycastTarget = false;
+                UiKit.Size(title, width: 580, height: 170);
+            }
+            else
+            {
+                Text title = UiKit.Label("Title", Root.transform, "Pirate's Dice", 128, Palette.Gold, style: FontStyle.Bold);
+                var outline = title.gameObject.AddComponent<Outline>();
+                outline.effectColor = Palette.WoodDark;
+                outline.effectDistance = new Vector2(4, -4);
+                UiKit.Shadowed(title);
+                UiKit.Size(title, height: 170);
+            }
             Text tagline = UiKit.Label("Tagline", Root.transform, "Liar's Dice on the high seas", 46, Palette.Parchment, style: FontStyle.Italic);
             UiKit.Shadowed(tagline);
             UiKit.Size(tagline, height: 70);
@@ -104,7 +114,7 @@ namespace PiratesDice.Game.UI
             int pirates = _config.AiOpponents;
             _opponents.text = $"You + {pirates} AI pirate{(pirates == 1 ? "" : "s")}";
             for (int i = 0; i < _difficulty.Length; i++)
-                _difficulty[i].image.color = (int)_config.Difficulty == i ? Palette.Gold : Palette.Wood;
+                UiKit.SetButtonColor(_difficulty[i], (int)_config.Difficulty == i ? Palette.Gold : Palette.Wood);
             SetRule(_wild, "Wild 1s", _config.Rules.WildOnes);
             SetRule(_spotOn, "Spot on", _config.Rules.SpotOn);
             SetRule(_palifico, "Palifico", _config.Rules.Palifico);
@@ -125,7 +135,7 @@ namespace PiratesDice.Game.UI
         static void SetRule(Button button, string name, bool on)
         {
             UiKit.SetButtonText(button, $"{name}: {(on ? "On" : "Off")}");
-            button.image.color = on ? Palette.Kelp : Palette.Disabled;
+            UiKit.SetButtonColor(button, on ? Palette.Kelp : Palette.Disabled);
         }
 
         Button RuleButton(Transform parent, Action toggle)
