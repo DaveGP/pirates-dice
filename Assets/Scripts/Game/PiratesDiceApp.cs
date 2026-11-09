@@ -54,7 +54,18 @@ namespace PiratesDice.Game
             Canvas canvas = UiKit.CreateCanvas("UI");
             canvas.transform.SetParent(transform, false);
 
-            Image(UiKit.Stretch(UiKit.Rect("Sea", canvas.transform)), Palette.Sea);
+            var sea = UiKit.Panel("Sea", canvas.transform, Palette.Sea, rounded: false);
+            UiKit.Stretch(sea.rectTransform);
+            sea.raycastTarget = false;
+            Sprite backdrop = Art.SeaBackdrop;
+            if (backdrop != null)
+            {
+                sea.sprite = backdrop;
+                sea.color = Color.white;
+                var fit = sea.gameObject.AddComponent<UnityEngine.UI.AspectRatioFitter>();
+                fit.aspectRatio = backdrop.rect.width / backdrop.rect.height;
+                fit.aspectMode = UnityEngine.UI.AspectRatioFitter.AspectMode.EnvelopeParent;
+            }
 
             // A fixed 1080x1920 column of tavern-table wood; the canvas scaler fits it to any screen.
             RectTransform column = UiKit.Rect("Column", canvas.transform);
@@ -63,7 +74,7 @@ namespace PiratesDice.Game
             var wood = column.gameObject.AddComponent<UnityEngine.UI.Image>();
             wood.sprite = Art.Wood;
             wood.type = UnityEngine.UI.Image.Type.Tiled;
-            wood.pixelsPerUnitMultiplier = 0.5f;
+            wood.pixelsPerUnitMultiplier = wood.sprite.rect.width / 512f;
             _column = column;
 
             _table = gameObject.AddComponent<TableController>();
@@ -74,8 +85,6 @@ namespace PiratesDice.Game
         }
 
         void OnApplicationQuit() => _online?.Leave();
-
-        static void Image(RectTransform rt, Color color) => rt.gameObject.AddComponent<UnityEngine.UI.Image>().color = color;
 
         void ClearScreens()
         {

@@ -444,6 +444,13 @@ namespace PiratesDice.Game
 
         public string NameOf(int seat) => _seats[seat].DisplayName;
 
+        // Use host seat order so an online player has the same portrait on every device.
+        public int CrewSlotOf(int seat)
+        {
+            if (IsMirror) return _mirror.IsHuman(seat) ? _mirror.ToHost(seat) : -1;
+            return IsOnline && Humans[seat] ? seat : -1;
+        }
+
         /// <summary>One plain sentence saying what a reveal meant.</summary>
         public string Describe(RoundResult r)
         {

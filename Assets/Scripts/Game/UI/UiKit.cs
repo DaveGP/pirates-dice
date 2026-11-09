@@ -116,6 +116,7 @@ namespace PiratesDice.Game.UI
             Image bg = Panel(name, parent, color);
             var button = bg.gameObject.AddComponent<Button>();
             button.targetGraphic = bg;
+            SetButtonColor(button, color);
             ColorBlock colors = button.colors;
             colors.highlightedColor = new Color(0.92f, 0.92f, 0.92f);
             colors.pressedColor = new Color(0.8f, 0.8f, 0.8f);
@@ -126,6 +127,13 @@ namespace PiratesDice.Game.UI
             Text label = Label("Label", bg.transform, text, fontSize, Palette.Bone, TextAnchor.MiddleCenter, FontStyle.Bold);
             Stretch(label.rectTransform, 8);
             return button;
+        }
+
+        public static void SetButtonColor(Button button, Color color)
+        {
+            Sprite sprite = Art.Button(color);
+            button.image.sprite = sprite != null ? sprite : Rounded;
+            button.image.color = sprite != null ? Color.white : color;
         }
 
         public static void SetButtonText(Button button, string text) =>

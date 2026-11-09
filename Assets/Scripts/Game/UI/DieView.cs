@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace PiratesDice.Game.UI
 {
-    /// <summary>A die drawn with pips, so it needs no font glyphs or art assets.</summary>
+    /// <summary>A painted die face with procedural pips as a fallback.</summary>
     public sealed class DieView
     {
         static readonly Vector2Int[][] Layouts =
@@ -37,8 +37,12 @@ namespace PiratesDice.Game.UI
 
         public void SetFace(int face, bool highlight = false, bool dim = false)
         {
-            Body.color = highlight ? Palette.Gold : dim ? new Color(0.75f, 0.72f, 0.66f) : Palette.Bone;
-            Vector2Int[] layout = Layouts[Mathf.Clamp(face, 0, 6)];
+            Sprite sprite = Art.Die(face);
+            Body.sprite = sprite != null ? sprite : UiKit.Rounded;
+            Body.type = sprite != null ? Image.Type.Simple : Image.Type.Sliced;
+            Body.color = highlight ? Palette.Gold : dim ? new Color(0.75f, 0.72f, 0.66f)
+                : sprite != null ? Color.white : Palette.Bone;
+            Vector2Int[] layout = Layouts[sprite != null ? 0 : Mathf.Clamp(face, 0, 6)];
             for (int i = 0; i < _pips.Length; i++)
             {
                 bool on = i < layout.Length;

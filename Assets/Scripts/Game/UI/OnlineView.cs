@@ -308,7 +308,8 @@ namespace PiratesDice.Game.UI
                 RectTransform row = UiKit.Rect("Pirate", _crewList);
                 UiKit.Row(row.gameObject, 16, 0, TextAnchor.MiddleLeft);
                 UiKit.Size(row, 820, 84);
-                Image face = UiKit.Picture("Portrait", row, Art.Portrait(name), Color.white, sliced: false);
+                Sprite portrait = name == _online.MyName ? Art.Portrait("You") : Art.Portrait(name, i);
+                Image face = UiKit.Picture("Portrait", row, portrait, Color.white, sliced: false);
                 UiKit.Size(face, 80, 80);
                 string label = i == 0 ? $"{name}  (captain)" : name;
                 if (name == _online.MyName && !_online.IsHost) label += "  (you)";
